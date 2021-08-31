@@ -32,25 +32,12 @@ class RenderCanvas extends spnr.GameEngine.DrawableEntity {
             size, spnr.v(1, 1));
         this.setTint(backgroundColor);
 
-        this.createColumnSprites();
+        this.columnSpriteHolder = new spnr.GameEngine.Entity('ColumnSpriteHolder', spnr.v(0, 0), 0);
+        this.addChild(this.columnSpriteHolder);
     }
 
-    createColumnSprites() {
-        this.columnSprites = [];
-        this.removeChildren();
-
-        var size = spnr.v(this.textureSize.x / this.rayAmount, 0);
-        for (var columnIdx = 0; columnIdx < this.rayAmount; columnIdx ++) {
-            var position = spnr.v(size.x * (columnIdx + 0.5), 0);
-            var crntColumn = [];
-            for (var segmentIdx = 0; segmentIdx < this.segmentsPerColumn; segmentIdx ++) {
-                var segment = new spnr.GameEngine.DrawableEntity('ColumnSprite',
-                    position, 0, PIXI.Texture.WHITE, size);
-                this.addChild(segment);
-                crntColumn.push(segment);
-            }
-            this.columnSprites.push(crntColumn);
-        }
+    deleteColumnSprites() {
+        this.columnSpriteHolder.removeChildren();
     }
 
     createRays(camera) {
@@ -104,19 +91,10 @@ class RenderCanvas extends spnr.GameEngine.DrawableEntity {
     }
 
     updateColumns(intersections, camera) {
-        // First make all of the segments have no size
-        for (var columnIdx = 0; columnIdx < this.columnSprites.length; columnIdx ++) {
-            var column = this.columnSprites[columnIdx];
-            for (var segmentIdx = 0; segmentIdx < column.length; segmentIdx ++) {
-                var segment = column[segmentIdx];
-                // Only change size if it's not already correct
-                if (segment.textureSize.y != 0) {
-                    segment.setTextureSize(spnr.v(segment.textureSize.x, 0));
-                }
-            }
-        }
+        this.deleteColumnSprites();
 
         var pixelsPerRadian = this.textureSize.x / camera.fov;
+        var columnSpriteWidth = this.textureSize.x / this.rayAmount;
         
         for (var rayIdx = 0; rayIdx < intersections.length; rayIdx ++) {
             var thisRayIntersections = intersections[rayIdx];
@@ -124,15 +102,21 @@ class RenderCanvas extends spnr.GameEngine.DrawableEntity {
                 intersectionIdx ++) {
                 var intersection = thisRayIntersections[intersectionIdx];
                 var heightOnScreen = this.calcSegmentHeight(intersection, pixelsPerRadian);
-                var yPos = this.calcSegmentYPos(intersection, pixelsPerRadian, camera);
+                var pos = spnr.v(
+                    (rayIdx + 0.5) * columnSpriteWidth,
+                    this.calcSegmentYPos(intersection, pixelsPerRadian, camera));
+                var size = spnr.v(columnSpriteWidth,
+                    this.calcSegmentHeight(intersection, pixelsPerRadian));
                 var color = this.calcSegmentColor(intersection, camera);
                 if (color == 0x000000) {
                     heightOnScreen = 0;
                 }
 
-                var sprite = this.columnSprites[rayIdx][intersectionIdx];
+    
+                var sprite = new spnr.GameEngine.DrawableEntity('ColumnSprite',
+                    pos, 0, PIXI.Texture.WHITE, size);
+                this.columnSpriteHolder.addChild(sprite);
                 sprite.setTextureSize(spnr.v(sprite.textureSize.x, heightOnScreen));
-                sprite.setLocalPosition(spnr.v(sprite.localPosition.x, yPos));
                 sprite.setTint(color);
                 sprite.updateSpritePosition();
                 sprite.setAlpha(intersection.renderablePlane.alpha);
