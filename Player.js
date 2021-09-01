@@ -1,5 +1,8 @@
 class Player extends spnr.GameEngine.Entity {
     moveSpeed = 5;
+    verticalSpeed = 0;
+    gravityStrength = -50;
+    jumpStrength = 10;
     turnSpeed = spnr.radians(270);
     verticalTurnSpeed = spnr.radians(60);
     maxVerticalAngle = spnr.radians(15);
@@ -9,12 +12,17 @@ class Player extends spnr.GameEngine.Entity {
     }
 
     update() {
+
         var movement = spnr.v(0, 0);
         if (spnr.GameEngine.keyboard.keyIsDown('KeyW')) {
             movement.y += this.moveSpeed;
         }
         if (spnr.GameEngine.keyboard.keyIsDown('KeyS')) {
             movement.y -= this.moveSpeed;
+        }
+
+        if (spnr.GameEngine.keyboard.keyIsDown('Space')) {
+            this.verticalSpeed = this.jumpStrength;
         }
 
         // For some reason that I cannot explain after a year of making raycasters,
@@ -58,6 +66,14 @@ class Player extends spnr.GameEngine.Entity {
         spnr.v.rotate(movement, this.localAngle);
         spnr.v.mult(movement, spnr.GameEngine.deltaTime);
         spnr.v.add(this.localPosition, movement);
+
+        this.verticalSpeed += this.gravityStrength * spnr.GameEngine.deltaTime;
+        this.localPosition.z += this.verticalSpeed * spnr.GameEngine.deltaTime;
+
+        if (this.localPosition.z < 0) {
+            this.localPosition.z = 0;
+            this.verticalSpeed = 0;
+        }
 
         this.localAngle += rotation * spnr.GameEngine.deltaTime;
 

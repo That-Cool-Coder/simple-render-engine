@@ -148,7 +148,8 @@ class RenderCanvas extends spnr.GameEngine.DrawableEntity {
 
     calcSegmentYPos(intersection, pixelsPerRadian, camera) {
         var yPos = this.textureSize.y / 2;
-        var angle = spnr.atan(-intersection.renderablePlane.getVerticalPosition() /
+        var angle = spnr.atan(
+            (-intersection.renderablePlane.getVerticalPosition() + camera.globalPosition.z) /
             intersection.distance);
         angle -= camera.verticalAngle;
         yPos += angle * pixelsPerRadian;
